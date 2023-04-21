@@ -1,0 +1,14 @@
+{
+  "description": "Show an icon instead.  \nbased on Actvities Icon & Label",
+  "name": "Logo Activities",
+  "shell-version": [
+    "40",
+    "41",
+    "42",
+    "43",
+    "44"
+  ],
+  "url": "https://github.com/orbitcorrecton/logo-activites/tree/main",
+  "uuid": "logoactivities@github.com.orbitcorrection",
+  "version": 1
+}
