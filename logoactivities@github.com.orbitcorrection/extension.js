@@ -35,7 +35,7 @@ var BUTTON_DND_ACTIVATION_TIMEOUT = 250;
 const ActivitiesIndicator = GObject.registerClass(
 class ActivitiesIndicator extends PanelMenu.Button {
     _init() {
-        super._init(0.0, _('logo Activities'));
+        super._init(0.0, null, true);
         this.accessible_role = Atk.Role.TOGGLE_BUTTON;
         
         this.name = 'panelActivities';
