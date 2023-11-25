@@ -1,0 +1,41 @@
+<schemalist gettext-domain="gnome-shell-extensions">
+  <schema id="org.gnome.shell.extensions.logoactivities" path="/org/gnome/shell/extensions/logoactivities/">
+    <key name="label" type="b">
+      <default>false</default>
+      <summary>Show label</summary>
+      <description>
+      </description>
+    </key>
+    <key name="popup" type="b">
+      <default>false</default>
+      <summary>show scroll popup</summary>
+      <description>
+      </description>
+    </key>
+    <key name="icon" type="b">
+      <default>true</default>
+      <summary>Show icon</summary>
+      <description>
+      </description>
+    </key>
+   <key name="text" type="s">
+<default>'Activities'</default>
+<summary>Set label</summary>
+<description>
+</description>
+</key>
+<key name="icon-name" type="s">
+<default>'start-here'</default>
+<summary>Set icon</summary>
+<description>
+</description>
+</key>
+<key name="scroll" type="b">
+      <default>true</default>
+      <summary>scroll desktop</summary>
+      <description>
+      </description>
+    </key>
+  </schema>
+</schemalist>
+

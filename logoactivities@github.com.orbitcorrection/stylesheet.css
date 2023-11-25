@@ -1,4 +1,6 @@
-#panel .panel-button .panel-logo-icon {
+.activities-icon {
   -st-icon-style: symbolic;
-  padding: .0em;
-  icon-size: 1.1em; }
+  icon-size: 16px; }
+  
+.activities-layout {
+  spacing: 6px; }
