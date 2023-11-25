@@ -31,7 +31,6 @@ import * as Panel from 'resource:///org/gnome/shell/ui/panel.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as WorkspaceSwitcherPopup from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
-import * as WorkspaceSwitcherPopupT from './workspaceSwitcherPopup.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const SCHEMA_NAME = 'org.gnome.shell.extensions.logoactivities';
