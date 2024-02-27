@@ -95,23 +95,19 @@ const KEY_SCROLL = 'scroll';
         this.label_actor = this._label;
         
         this._showingSignal = Main.overview.connect('showing', () => {
-            this.add_style_pseudo_class('overview');
+            this.add_style_pseudo_class('checked');
             this.add_accessible_state(Atk.StateType.CHECKED);
         });        
         
         this._hidingSignal = Main.overview.connect('hiding', () => {
-            this.remove_style_pseudo_class('overview');
+            this.remove_style_pseudo_class('checked');
             this.remove_accessible_state(Atk.StateType.CHECKED);
         });
 
         this._scrollEventId = this.connect('scroll-event', this.scrollEvent.bind(this));
-        //this._puId = this.connect('enter-event', this.switchWorkspacet.bind(this));
-        //this._pufId = this.connect('leave-event', this.switchWorkspacett.bind(this));
                 
         this._xdndTimeOut = 0;
         this.wm = global.workspace_manager;
-        this.set_track_hover(true);
-        this.set_reactive(true);
         
     }   
    
@@ -216,7 +212,7 @@ const KEY_SCROLL = 'scroll';
         }
         
         let gap = event.get_time() - this._time;
-        if (gap < 192 && gap >= 0)
+        if (gap < 200 && gap >= 0)
             return Clutter.EVENT_STOP;
         this._time = event.get_time();
 
@@ -256,52 +252,11 @@ const KEY_SCROLL = 'scroll';
         
     }
     
-    switchWorkspacet(direction) {
-        let ws = this.getWorkSpace();
-
-        let activeIndex = this.wm.get_active_workspace_index();
-
-        let newWs;
-                newWs = activeIndex;
-
-        if (this.popup)
-        this.switcherPopupt(direction, ws[newWs]);
-        else
-        return        
-    }
-    
-    switchWorkspacett(direction) {
-        let ws = this.getWorkSpace();
-
-        let activeIndex = this.wm.get_active_workspace_index();
-
-        let newWs;
-                newWs = activeIndex;
-        
-        this.switcherPopupt.destroy();
-        
-    }
-    
-    
     switcherPopup(direction, newWs) {
         if (!Main.overview.visible) {
             if (this._workspaceSwitcherPopup == null) {
                 Main.wm._workspaceTracker.blockUpdates();
                 this._workspaceSwitcherPopup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
-                this._workspaceSwitcherPopup.connect('destroy', () => {
-                    Main.wm._workspaceTracker.unblockUpdates();
-                    this._workspaceSwitcherPopup = null;
-                });
-            }
-            this._workspaceSwitcherPopup.display(newWs.index());
-        }
-    }
-    
-    switcherPopupt(direction, newWs) {
-        if (!Main.overview.visible) {
-            if (this._workspaceSwitcherPopup == null) {
-                Main.wm._workspaceTracker.blockUpdates();
-                this._workspaceSwitcherPopup = new WorkspaceSwitcherPopupT.WorkspaceSwitcherPopup();
                 this._workspaceSwitcherPopup.connect('destroy', () => {
                     Main.wm._workspaceTracker.unblockUpdates();
                     this._workspaceSwitcherPopup = null;
@@ -385,8 +340,7 @@ export default class ActivitiesExtension extends Extension {
         Main.panel.statusArea['activities'].hide();
         
         this._indicator = new ActivitiesIndicator(this._settings);
-        
-        Main.panel.addToStatusArea(this._uuid, this._indicator, 0, 'left');
+        Main.panel.addToStatusArea('Logoactivities', this._indicator, 0, 'left');
 }
 
     disable() {
