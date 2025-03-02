@@ -27,14 +27,12 @@ import Shell from 'gi://Shell';
 import Graphene from 'gi://Graphene';
 import AccountsService from 'gi://AccountsService';
 
-
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 import * as Panel from 'resource:///org/gnome/shell/ui/panel.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as WorkspaceSwitcherPopup from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
-import * as UserWidget from 'resource:///org/gnome/shell/ui/userWidget.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const N_QUICK_SETTINGS_COLUMNS = 2;
@@ -48,8 +46,6 @@ const KEY_ICON = 'icon';
 const KEY_ICONNAME = 'icon-name';
 const KEY_SCROLL = 'scroll';
 const KEY_PANEL = 'panel-indicator';
-
-
 
 const WorkspaceDot = GObject.registerClass({
     Properties: {
@@ -189,11 +185,11 @@ class WorkspaceIndicators extends St.BoxLayout {
 
         let widthMultiplier;
         if (nIndicators <= 3)
-            widthMultiplier = 3.75; //3.25; //
+            widthMultiplier = 3.75;
         else if (nIndicators <= 5)
-            widthMultiplier = 3.25; //2.75; //
+            widthMultiplier = 3.25;
         else
-            widthMultiplier = 2.75; //2.5; //
+            widthMultiplier = 2.75;
 
 
         this.get_children().forEach((indicator, index) => {
@@ -209,7 +205,7 @@ class WorkspaceIndicators extends St.BoxLayout {
     class ActivitiesIndicator extends PanelMenu.Button {
     
     _init(settings) {
-        super._init(0.5, 'Logo Activities', false);
+        super._init(0.5, 'Logo Activities', true);
         this.accessible_role = Atk.Role.TOGGLE_BUTTON;
         this.reactive = true;
         this.can_focus = true;
@@ -218,110 +214,15 @@ class WorkspaceIndicators extends St.BoxLayout {
         
         /* Translators: If there is no suitable word for "Activities"
            in your language, you can use the word for "Overview". */
-        
-        
-        
-        
-        
-        /*let item3 = new PopupMenu.PopupMenuItem(_('Web'));
-        item3.connect('activate', () => {
-        Util.spawnCommandLine('xdg-open https://');
-        Main.overview.hide();
-        });
-        this.menu.addMenuItem(item3);
-        
-        let item4 = new PopupMenu.PopupMenuItem(_('Mail'));
-        item4.connect('activate', () => {
-        Util.spawnCommandLine('xdg-email');
-        Main.overview.hide();
-        });
-        this.menu.addMenuItem(item4);
-        
-        let item7 = new PopupMenu.PopupMenuItem(_('File'));
-        item7.connect('activate', () => {
-        Util.spawnCommandLine('~');
-        Main.overview.hide();
-        });
-        this.menu.addMenuItem(item7);
-        
-        const sItem2 = new PopupMenu.PopupSeparatorMenuItem('');       
-        this.menu.addMenuItem(sItem2);*/
-        
-        
-        let item6 = new PopupMenu.PopupMenuItem(_('About'));
-        item6.connect('activate', () => {
-        Util.spawnCommandLine('gnome-control-center system about');
-        Main.overview.hide();
-        });
-        //this.menu.addMenuItem(item6);
-        
-        
-        const sItem3 = new PopupMenu.PopupSeparatorMenuItem('');
-        //this.menu.addMenuItem(sItem3);
-        
-        let item1 = new PopupMenu.PopupMenuItem(_('Overview'));
-        item1.connect('activate', () => {
-        if (Main.overview.shouldToggleByCornerOrButton())
-            Main.overview.toggle();
-        });
-        //this.menu.addMenuItem(item1);
-        
-        let item2 = new PopupMenu.PopupMenuItem(_('App Grid'));
-        item2.connect('activate', () => {
-        if(Main.overview.dash.showAppsButton.checked){
-            Main.overview.dash.showAppsButton.checked = false;
-        }else{
-            if (Main.overview.shouldToggleByCornerOrButton()){
-            Main.overview.show();
-            Main.overview.dash.showAppsButton.checked = true;}
-            }
-        });
-        //this.menu.addMenuItem(item2);
-        
-        const sItem4 = new PopupMenu.PopupSeparatorMenuItem('');       
-        //this.menu.addMenuItem(sItem4);
-        
-        
-        let item7 = new PopupMenu.PopupMenuItem(_('Run a Command'));
-        item7.connect('activate', () => {
-        Main.openRunDialog();
-        });
-        //this.menu.addMenuItem(item7);
-        const sItem = new PopupMenu.PopupSeparatorMenuItem('');
-        //this.menu.addMenuItem(sItem);
-        
-        
-        let bigAvatarItem = new PopupMenu.PopupMenuItem('');
-        bigAvatarItem.add_style_class_name('big-a');
-        var userManager = AccountsService.UserManager.get_default();
-    var user = userManager.get_user(GLib.get_user_name());
-    //Draw the bigAvatarItem.UserWidget
-    var avatar = new UserWidget.UserWidget(user);
-    avatar._updateUser();
-    //bigAvatarItem.actor.get_last_child().add_child(avatar);
-    bigAvatarItem.insert_child_at_index(avatar,0);
-    bigAvatarItem.connect('activate', () => {
-        Util.spawnCommandLine('gnome-control-center system users');
-        Main.overview.hide();
-        });
-    //this.menu.addMenuItem(bigAvatarItem);
-    
-        let item5 = new PopupMenu.PopupMenuItem(_('Online Account'));
-        item5.connect('activate', () => {
-        Util.spawnCommandLine('gnome-control-center online-accounts');
-        Main.overview.hide();
-        });
-        
-        
-        this.menu.addMenuItem(item1);
-        this.menu.addMenuItem(item2);
-        this.menu.addMenuItem(sItem4);
-        this.menu.addMenuItem(item7);        
-        this.menu.addMenuItem(sItem);
-        this.menu.addMenuItem(bigAvatarItem);
-        //this.menu.addMenuItem(item5);
-        this.menu.addMenuItem(sItem3);
-        this.menu.addMenuItem(item6);
+           if (Main.overview.visible)
+           this._bin.visible = false;
+        this._hiddenSignal = Main.overview.connect('hidden', () => {
+            this._bin.visible = true;
+            });
+           Main.overview.connect('hidden', () => {
+           Main.panel.statusArea['Workspaceactivities'].show();});
+           Main.overview.connect('showing', () => {
+           Main.panel.statusArea['Workspaceactivities'].hide();});           
         
         this.text_label = settings.get_boolean(KEY_LABEL);        
         this.activities_icon = settings.get_boolean(KEY_ICON);
@@ -344,7 +245,7 @@ class WorkspaceIndicators extends St.BoxLayout {
         
         let bin = new St.Bin();
         this.add_child(bin);
-
+        
         this._container = new St.BoxLayout({style_class: 'activities-layout'});
         bin.set_child(this._container);
         
@@ -419,16 +320,6 @@ class WorkspaceIndicators extends St.BoxLayout {
         }
         
     }
-    /*_onButtonPress(_, event) {
-            let butt = event.get_button();
-
-            if (butt == 3) {
-                this.menu.toggle();
-            } else if (butt == 1) {
-                if (Main.overview.shouldToggleByCornerOrButton())
-                Main.overview.toggle();
-            } else if (butt == 2) {}
-        }*/
 
     handleDragOver(source, _actor, _x, _y, _time) {
         if (source != Main.xdndHandler)
@@ -444,16 +335,11 @@ class WorkspaceIndicators extends St.BoxLayout {
         return DND.DragMotionResult.CONTINUE;
     }
 
-    vfunc_event(event) {  
-        let butt = event.get_button();
+    vfunc_event(event) {    
         if (event.type() == Clutter.EventType.TOUCH_END ||
             event.type() == Clutter.EventType.BUTTON_RELEASE) {
-             if (butt == 3) {
-                this.menu.toggle();
-            } else if (butt == 1) {
-                if (Main.overview.shouldToggleByCornerOrButton())
+            if (Main.overview.shouldToggleByCornerOrButton())
                 Main.overview.toggle();
-            } else if (butt == 2) {}
         }
         return Clutter.EVENT_PROPAGATE;
     }
@@ -635,32 +521,13 @@ class ActivitiesButton extends PanelMenu.Button {
         Util.spawnCommandLine('gnome-control-center multitasking');
         Main.overview.hide();
         });
-        this.menu.addMenuItem(item); 
-        //this.connect('button-press-event', this._onButtonPress);
+        this.menu.addMenuItem(item);   
+        
+        
         } 
-        
-        _onButtonPress(_, event) {
-            let workspaceManager = global.workspace_manager;
-            let activeWorkspaceIndex = workspaceManager.get_active_workspace_index();
-            let button = event.get_button();
-
-            if (button == 1) {
-                if (activeWorkspaceIndex == 0) {
-                    return
-                }
-                Main.wm.actionMoveWorkspace(workspaceManager.get_workspace_by_index(activeWorkspaceIndex-1));
-            } else if (button == 3) {
-                if (activeWorkspaceIndex == workspaceManager.get_n_workspaces()-1) {
-                    return
-                }
-                Main.wm.actionMoveWorkspace(workspaceManager.get_workspace_by_index(activeWorkspaceIndex+1));
-            } else if (button == 2) {}
-        }
-        
         vfunc_event(event) {
         if (event.type() === Clutter.EventType.TOUCH_END ||
             event.type() === Clutter.EventType.BUTTON_RELEASE) {
-            //this._onButtonPress(_, event);
             this.menu.toggle();
         }
 
@@ -674,7 +541,7 @@ export default class ActivitiesExtension extends Extension {
     panel_indicator() {
            this._indicator2 = new ActivitiesButton();
            Main.panel.addToStatusArea('Workspaceactivities', this._indicator2, 0, 'right');
-           //Main.panel.statusArea['Workspaceactivities'].hide();
+           Main.panel.statusArea['Workspaceactivities'].hide();
     }
 
     enable() {
