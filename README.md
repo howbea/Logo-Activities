@@ -1,2 +1,2 @@
 # Logo-Activities 
-add your favorite icon to .icon/hicolor/emblem/SIZE OR scalable
+add your favorite icon to .icon/hicolor/SIZE OR scalable/emblem
