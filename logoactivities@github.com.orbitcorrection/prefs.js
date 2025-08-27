@@ -10,7 +10,7 @@ const KEY_TEXT = 'text';
 const KEY_ICON = 'icon';
 const KEY_ICONNAME = 'icon-name';
 const KEY_SCROLL = 'scroll';
-
+const KEY_PANEL = 'panel-indicator';
 
 function buildPrefsWidget(settings) {
     let widget = new Gtk.Box({
@@ -31,8 +31,9 @@ let hbox = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, margin_top: 5})
     vbox.append(addText(KEY_ICONNAME, 'Enter icon name', settings));
     vbox.append(addItemSwitch("Label", KEY_LABEL, settings));
     vbox.append(addText(KEY_TEXT, 'Enter label text', settings));
-    vbox.append(addItemSwitch("Scroll Desktop", KEY_SCROLL, settings));
-    vbox.append(addItemSwitch("Workspace Switcher Popup", KEY_POPUP, settings));
+    vbox.append(addItemSwitch("Desktop Scroll", KEY_SCROLL, settings));
+    vbox.append(addItemSwitch("Popup Indicator", KEY_POPUP, settings));
+    vbox.append(addItemSwitch("Panel Indicator", KEY_PANEL, settings));
 
     widget.append(vbox); widget.append(hbox);
 
