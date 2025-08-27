@@ -4,3 +4,13 @@
   
 .activities-layout {
   spacing: 6px; }
+#panel .panel-button#panellogoActivities StBoxLayout {
+ padding: 0 6px;}
+
+.ws-switcher-indicator {
+  padding: 2.6666666667px;
+  margin: 13.3333333333px;
+  border-radius: 32px; }
+  .ws-switcher-indicator:active {
+    padding: 5.3333333333px;
+    margin: 10.6666666667px; }

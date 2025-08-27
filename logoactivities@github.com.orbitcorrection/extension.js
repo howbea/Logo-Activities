@@ -24,6 +24,8 @@ import Gio from 'gi://Gio';
 import St from 'gi://St';
 import Meta from 'gi://Meta';
 import Shell from 'gi://Shell';
+import Graphene from 'gi://Graphene';
+import AccountsService from 'gi://AccountsService';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Util from 'resource:///org/gnome/shell/misc/util.js';
@@ -33,6 +35,9 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as WorkspaceSwitcherPopup from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+const N_QUICK_SETTINGS_COLUMNS = 2;
+const INACTIVE_WORKSPACE_DOT_SCALE = 0.75;
+
 const SCHEMA_NAME = 'org.gnome.shell.extensions.logoactivities';
 const KEY_LABEL = 'label';
 const KEY_POPUP = 'popup';
@@ -40,15 +45,19 @@ const KEY_TEXT = 'text';
 const KEY_ICON = 'icon';
 const KEY_ICONNAME = 'icon-name';
 const KEY_SCROLL = 'scroll';
+const KEY_PANEL = 'panel-indicator';
+
 
     const ActivitiesIndicator = GObject.registerClass(
     class ActivitiesIndicator extends PanelMenu.Button {
     
     _init(settings) {
-        super._init(0.0, null, true);
+        super._init(0.5, 'Logo Activities', true);
         this.accessible_role = Atk.Role.TOGGLE_BUTTON;
+        this.reactive = true;
+        this.can_focus = true;
         
-        this.name = 'panelActivities';
+        this.name = 'panellogoActivities';
         
         /* Translators: If there is no suitable word for "Activities"
            in your language, you can use the word for "Overview". */
@@ -73,7 +82,7 @@ const KEY_SCROLL = 'scroll';
         });
         
         let bin = new St.Bin();
-        this.add_actor(bin);
+        this.add_child(bin);
         
         this._container = new St.BoxLayout({style_class: 'activities-layout'});
         bin.set_child(this._container);
@@ -81,13 +90,13 @@ const KEY_SCROLL = 'scroll';
         this._iconBox = new St.Bin({
         y_align: Clutter.ActorAlign.CENTER,
         });         
-        this._container.add_actor(this._iconBox);        
+        this._container.add_child(this._iconBox);        
           
         this._label = new St.Label({
             text: _('Activities'),
             y_align: Clutter.ActorAlign.CENTER,
         });        
-        this._container.add_actor(this._label);
+        this._container.add_child(this._label);
         
         this._set_icon();              
         this._set_label();
@@ -105,11 +114,12 @@ const KEY_SCROLL = 'scroll';
         });
 
         this._scrollEventId = this.connect('scroll-event', this.scrollEvent.bind(this));
+        
                 
         this._xdndTimeOut = 0;
         this.wm = global.workspace_manager;
         
-    }   
+    }
    
      _set_icon() {
      
@@ -163,7 +173,7 @@ const KEY_SCROLL = 'scroll';
         return DND.DragMotionResult.CONTINUE;
     }
 
-    vfunc_event(event) {
+    vfunc_event(event) {    
         if (event.type() == Clutter.EventType.TOUCH_END ||
             event.type() == Clutter.EventType.BUTTON_RELEASE) {
             if (Main.overview.shouldToggleByCornerOrButton())
@@ -180,7 +190,6 @@ const KEY_SCROLL = 'scroll';
                 return Clutter.EVENT_PROPAGATE;
             }
         }
-
         return Clutter.EVENT_PROPAGATE;
     }
 
@@ -332,21 +341,201 @@ const KEY_SCROLL = 'scroll';
     }
 });
 
+const WorkspaceDot = GObject.registerClass({
+    Properties: {
+        'expansion': GObject.ParamSpec.double('expansion', '', '',
+            GObject.ParamFlags.READWRITE,
+            0.0, 1.0, 0.0),
+        'width-multiplier': GObject.ParamSpec.double(
+            'width-multiplier', '', '',
+            GObject.ParamFlags.READWRITE,
+            1.0, 10.0, 1.0),
+    },
+}, class WorkspaceDot extends Clutter.Actor {
+    constructor(params = {}) {
+        super({
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}),
+            ...params,
+        });
+
+        this._dot = new St.Widget({
+            style_class: 'workspace-dot',
+            y_align: Clutter.ActorAlign.CENTER,
+            pivot_point: new Graphene.Point({x: 0.5, y: 0.5}),
+            request_mode: Clutter.RequestMode.WIDTH_FOR_HEIGHT,
+        });
+        this.add_child(this._dot);
+
+        this.connect('notify::width-multiplier', () => this.queue_relayout());
+        this.connect('notify::expansion', () => {
+            this._updateVisuals();
+            this.queue_relayout();
+        });
+        this._updateVisuals();
+
+        this._destroying = false;
+    }
+
+    _updateVisuals() {
+        const {expansion} = this;
+
+        this._dot.set({
+            opacity: Util.lerp(0.50, 1.0, expansion) * 255,
+            scaleX: Util.lerp(INACTIVE_WORKSPACE_DOT_SCALE, 1.0, expansion),
+            scaleY: Util.lerp(INACTIVE_WORKSPACE_DOT_SCALE, 1.0, expansion),
+        });
+    }
+
+    vfunc_get_preferred_width(forHeight) {
+        const factor = Util.lerp(1.0, this.widthMultiplier, this.expansion);
+        return this._dot.get_preferred_width(forHeight).map(v => Math.round(v * factor));
+    }
+
+    vfunc_get_preferred_height(forWidth) {
+        return this._dot.get_preferred_height(forWidth);
+    }
+
+    vfunc_allocate(box) {
+        this.set_allocation(box);
+
+        box.set_origin(0, 0);
+        this._dot.allocate(box);
+    }
+
+    scaleIn() {
+        this.set({
+            scale_x: 0,
+            scale_y: 0,
+        });
+
+        this.ease({
+            duration: 500,
+            mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+            scale_x: 1.0,
+            scale_y: 1.0,
+        });
+    }
+
+    scaleOutAndDestroy() {
+        this._destroying = true;
+
+        this.ease({
+            duration: 500,
+            mode: Clutter.AnimationMode.EASE_OUT_CUBIC,
+            scale_x: 0.0,
+            scale_y: 0.0,
+            onComplete: () => this.destroy(),
+        });
+    }
+
+    get destroying() {
+        return this._destroying;
+    }
+});
+
+const WorkspaceIndicators = GObject.registerClass(
+class WorkspaceIndicators extends St.BoxLayout {
+    constructor() {
+        super();
+
+        this._workspacesAdjustment = Main.createWorkspacesAdjustment(this);
+        this._workspacesAdjustment.connectObject(
+            'notify::value', () => this._updateExpansion(),
+            'notify::upper', () => this._recalculateDots(),
+            this);
+
+        for (let i = 0; i < this._workspacesAdjustment.upper; i++)
+            this.insert_child_at_index(new WorkspaceDot(), i);
+        this._updateExpansion();
+    }
+
+    _getActiveIndicators() {
+        return [...this].filter(i => !i.destroying);
+    }
+
+    _recalculateDots() {
+        const activeIndicators = this._getActiveIndicators();
+        const nIndicators = activeIndicators.length;
+        const targetIndicators = this._workspacesAdjustment.upper;
+
+        let remaining = Math.abs(nIndicators - targetIndicators);
+        while (remaining--) {
+            if (nIndicators < targetIndicators) {
+                const indicator = new WorkspaceDot();
+                this.add_child(indicator);
+                indicator.scaleIn();
+            } else {
+                const indicator = activeIndicators[nIndicators - remaining - 1];
+                indicator.scaleOutAndDestroy();
+            }
+        }
+
+        this._updateExpansion();
+    }
+
+    _updateExpansion() {
+        const nIndicators = this._getActiveIndicators().length;
+        const activeWorkspace = this._workspacesAdjustment.value;
+
+        let widthMultiplier;
+        if (nIndicators <= 3)
+            widthMultiplier = 3.75;
+        else if (nIndicators <= 5)
+            widthMultiplier = 3.25;
+        else
+            widthMultiplier = 2.75;
+
+
+        this.get_children().forEach((indicator, index) => {
+            const distance = Math.abs(index - activeWorkspace);
+            indicator.expansion = Math.clamp(1 - distance, 0, 1);
+            indicator.widthMultiplier = widthMultiplier;
+        });
+    }
+});
+
+const ActivitiesButton = GObject.registerClass(
+class ActivitiesButton extends PanelMenu.Button {
+    _init() {
+        super._init(0.5, _('Multi Tasking'));
+        this.reactive = false;
+        this.can_focus = false;
+        this.set({
+            name: 'panelActivities',
+        });
+        this.add_child(new WorkspaceIndicators());
+}
+    
+});
 export default class ActivitiesExtension extends Extension {
+
+    panel_indicator() {
+           this._indicator2 = new ActivitiesButton();
+           Main.panel.addToStatusArea('Workspaceactivities', this._indicator2, 0, 'right');
+        }
 
     enable() {
         this._settings = this.getSettings();
-        
-        Main.panel.statusArea['activities'].hide();
-        
+        Main.panel.statusArea['activities'].hide();        
         this._indicator = new ActivitiesIndicator(this._settings);
         Main.panel.addToStatusArea('Logoactivities', this._indicator, 0, 'left');
+        if (this._settings.get_boolean(KEY_PANEL))
+        this.panel_indicator();
+        this._settings.connect('changed::'+ KEY_PANEL, () => {
+           this._indicator2?.destroy();
+           this._indicator2 = null;
+           if (this._settings.get_boolean(KEY_PANEL)) {
+            this.panel_indicator();
+            }
+           });
 }
 
     disable() {
         this._settings = null;
-        this._indicator.destroy();
+        this._indicator?.destroy();
         this._indicator = null;
+        this._indicator2?.destroy();
+        this._indicator2 = null;
       
         if (Main.sessionMode.currentMode !== 'unlock-dialog')
             Main.panel.statusArea['activities'].show();

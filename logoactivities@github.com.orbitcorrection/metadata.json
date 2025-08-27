@@ -7,9 +7,10 @@
   "name": "Logo Activities",
   "settings-schema": "org.gnome.shell.extensions.logoactivities",
   "shell-version": [
-    "45"
+    "45",
+    "46"
   ],
   "url": "https://github.com/howbea/logo-activities",
   "uuid": "logoactivities@github.com.orbitcorrection",
-  "version": 11
+  "version": 17
 }
