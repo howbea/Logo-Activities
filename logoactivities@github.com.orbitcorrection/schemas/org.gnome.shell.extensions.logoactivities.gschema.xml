@@ -30,6 +30,13 @@
 <description>
 </description>
 </key>
+<key name="show-workspace-indicators" type="b">
+  <default>true</default>
+  <summary>Show Workspace Indicators</summary>
+  <description>
+    Enable or disable workspace indicators.
+  </description>
+</key>
 <key name="scroll" type="b">
       <default>true</default>
       <summary>scroll desktop</summary>

@@ -26,7 +26,11 @@ function buildPrefsWidget(settings) {
         margin_top: 10
     });
     vbox.set_size_request(550, 350);
-let hbox = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, margin_top: 5});
+
+    // Add switch for workspace indicators
+    vbox.append(addItemSwitch("Show Workspace Indicators", "show-workspace-indicators", settings));
+
+    // Add other settings...
     vbox.append(addItemSwitch("Icon", KEY_ICON, settings));
     vbox.append(addText(KEY_ICONNAME, 'Enter icon name', settings));
     vbox.append(addItemSwitch("Label", KEY_LABEL, settings));
@@ -35,10 +39,11 @@ let hbox = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, margin_top: 5})
     vbox.append(addItemSwitch("Popup Indicator", KEY_POPUP, settings));
     vbox.append(addItemSwitch("Panel Indicator", KEY_PANEL, settings));
 
-    widget.append(vbox); widget.append(hbox);
+    widget.append(vbox);
 
     return widget;
 }
+
 
 function addItemSwitch(string, key, gsettings) {
         let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, margin_top: 20});

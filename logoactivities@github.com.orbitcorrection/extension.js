@@ -46,299 +46,7 @@ const KEY_ICON = 'icon';
 const KEY_ICONNAME = 'icon-name';
 const KEY_SCROLL = 'scroll';
 const KEY_PANEL = 'panel-indicator';
-
-
-    const ActivitiesIndicator = GObject.registerClass(
-    class ActivitiesIndicator extends PanelMenu.Button {
-    
-    _init(settings) {
-        super._init(0.5, 'Logo Activities', true);
-        this.accessible_role = Atk.Role.TOGGLE_BUTTON;
-        this.reactive = true;
-        this.can_focus = true;
-        
-        this.name = 'panellogoActivities';
-        
-        /* Translators: If there is no suitable word for "Activities"
-           in your language, you can use the word for "Overview". */
-           
-        
-        this.text_label = settings.get_boolean(KEY_LABEL);        
-        this.activities_icon = settings.get_boolean(KEY_ICON);
-        this.text = settings.get_string(KEY_TEXT);
-        this.activities_icon_name = settings.get_string(KEY_ICONNAME);
-        this.desktopscroll = settings.get_boolean(KEY_SCROLL);
-        this.popup = settings.get_boolean(KEY_POPUP);
-        
-        this._settingsID = settings.connect("changed", () => {
-            this.text_label = settings.get_boolean(KEY_LABEL);
-            this.activities_icon = settings.get_boolean(KEY_ICON);
-            this.text = settings.get_string(KEY_TEXT);
-            this.activities_icon_name = settings.get_string(KEY_ICONNAME);
-            this.desktopscroll = settings.get_boolean(KEY_SCROLL);
-            this.popup = settings.get_boolean(KEY_POPUP);
-            this._set_label();
-            this._set_icon();
-        });
-        
-        let bin = new St.Bin();
-        this.add_child(bin);
-        
-        this._container = new St.BoxLayout({style_class: 'activities-layout'});
-        bin.set_child(this._container);
-        
-        this._iconBox = new St.Bin({
-        y_align: Clutter.ActorAlign.CENTER,
-        });         
-        this._container.add_child(this._iconBox);        
-          
-        this._label = new St.Label({
-            text: _('Activities'),
-            y_align: Clutter.ActorAlign.CENTER,
-        });        
-        this._container.add_child(this._label);
-        
-        this._set_icon();              
-        this._set_label();
-        
-        this.label_actor = this._label;
-        
-        this._showingSignal = Main.overview.connect('showing', () => {
-            this.add_style_pseudo_class('checked');
-            this.add_accessible_state(Atk.StateType.CHECKED);
-        });        
-        
-        this._hidingSignal = Main.overview.connect('hiding', () => {
-            this.remove_style_pseudo_class('checked');
-            this.remove_accessible_state(Atk.StateType.CHECKED);
-        });
-
-        this._scrollEventId = this.connect('scroll-event', this.scrollEvent.bind(this));         
-                
-        this._xdndTimeOut = 0;
-        this.wm = global.workspace_manager;
-        
-    }
-   
-     _set_icon() {
-     
-     if (this.activities_icon) {
-        const icon = new St.Icon({
-            icon_name: 'start-here',
-            style_class: 'activities-icon',
-        });
-        this._iconBox.set_child(icon);
-        
-        icon.icon_name = this.activities_icon_name;
-        
-        if(this.activities_icon_name === '')
-        this._iconBox.visible = false;
-
-        this._iconBox.visible = true;
-        }
-        else {
-        this._iconBox.visible = false;
-        }
-        
-    }
-    
-    _set_label() {
-    
-        if(this.text_label) {
-        this._label.set_text(this.text);
-        
-        if(this.text === '')
-        this._label.visible = false;
-        
-        this._label.visible = true;
-        }
-        else {
-        this._label.visible = false;
-        }
-        
-    }
-
-    handleDragOver(source, _actor, _x, _y, _time) {
-        if (source != Main.xdndHandler)
-            return DND.DragMotionResult.CONTINUE;
-
-        if (this._xdndTimeOut != 0)
-            GLib.source_remove(this._xdndTimeOut);
-        this._xdndTimeOut = GLib.timeout_add(GLib.PRIORITY_DEFAULT, BUTTON_DND_ACTIVATION_TIMEOUT, () => {
-            this._xdndToggleOverview();
-        });
-        GLib.Source.set_name_by_id(this._xdndTimeOut, '[gnome-shell] this._xdndToggleOverview');
-
-        return DND.DragMotionResult.CONTINUE;
-    }
-
-    vfunc_event(event) {    
-        if (event.type() == Clutter.EventType.TOUCH_END ||
-            event.type() == Clutter.EventType.BUTTON_RELEASE) {
-            if (Main.overview.shouldToggleByCornerOrButton())
-                Main.overview.toggle();
-        }
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    vfunc_key_release_event(keyEvent) {
-        let symbol = keyEvent.keyval;
-        if (symbol == Clutter.KEY_Return || symbol == Clutter.KEY_space) {
-            if (Main.overview.shouldToggleByCornerOrButton()) {
-                Main.overview.toggle();
-                return Clutter.EVENT_PROPAGATE;
-            }
-        }
-        return Clutter.EVENT_PROPAGATE;
-    }
-
-    _xdndToggleOverview() {
-        let [x, y] = global.get_pointer();
-        let pickedActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
-
-        if (pickedActor == this && Main.overview.shouldToggleByCornerOrButton())
-            Main.overview.toggle();
-
-        GLib.source_remove(this._xdndTimeOut);
-        this._xdndTimeOut = 0;
-        return GLib.SOURCE_REMOVE;
-    }
-    
-    scrollEvent(actor, event) {
-        let direction;
-        switch (event.get_scroll_direction()) {
-        case Clutter.ScrollDirection.UP:
-        case Clutter.ScrollDirection.LEFT:
-            direction = Meta.MotionDirection.UP;
-            break;
-        case Clutter.ScrollDirection.DOWN:
-        case Clutter.ScrollDirection.RIGHT:
-            direction = Meta.MotionDirection.DOWN;
-            break;
-        default:
-            return Clutter.EVENT_STOP;
-        }
-        
-        let gap = event.get_time() - this._time;
-        if (gap < 200 && gap >= 0)
-            return Clutter.EVENT_STOP;
-        this._time = event.get_time();
-
-        this.switchWorkspace(direction);
-
-        return Clutter.EVENT_STOP;
-    }
-
-
-    switchWorkspace(direction) {
-        let ws = this.getWorkSpace();
-
-        let activeIndex = this.wm.get_active_workspace_index();
-
-        let newWs;
-        if (direction == Meta.MotionDirection.UP) {
-            if (activeIndex == 0 )
-                newWs = 0; //ws.length - 1;
-            else
-                newWs = activeIndex - 1;
-        } else {
-            if (activeIndex == (ws.length - 1) )
-                newWs = ws.length - 1; //0;
-            else
-                newWs = activeIndex + 1;
-        }
-        
-        if (this.desktopscroll)
-        this.actionMoveWorkspace(ws[newWs]);
-        else
-        return
-        
-        if (this.popup)
-        this.switcherPopup(direction, ws[newWs]);
-        else
-        return 
-        
-    }
-    
-    switcherPopup(direction, newWs) {
-        if (!Main.overview.visible) {
-            if (this._workspaceSwitcherPopup == null) {
-                Main.wm._workspaceTracker.blockUpdates();
-                this._workspaceSwitcherPopup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
-                this._workspaceSwitcherPopup.connect('destroy', () => {
-                    Main.wm._workspaceTracker.unblockUpdates();
-                    this._workspaceSwitcherPopup = null;
-                });
-            }
-            this._workspaceSwitcherPopup.display(newWs.index());
-        }
-    }
-
-    getWorkSpace() {
-        let activeWs = this.wm.get_active_workspace();
-
-        let activeIndex = activeWs.index();
-        let ws = [];
-
-        ws[activeIndex] = activeWs;
-
-        const vertical = this.wm.layout_rows === -1;
-        for (let i = activeIndex - 1; i >= 0; i--) {
-            if (vertical)
-                ws[i] = ws[i + 1].get_neighbor(Meta.MotionDirection.UP);
-            else
-                ws[i] = ws[i + 1].get_neighbor(Meta.MotionDirection.LEFT);
-        }
-
-        for (let i = activeIndex + 1; i < this.wm.n_workspaces; i++) {
-            if (vertical)
-                ws[i] = ws[i - 1].get_neighbor(Meta.MotionDirection.DOWN);
-            else
-                ws[i] = ws[i - 1].get_neighbor(Meta.MotionDirection.RIGHT);
-        }
-
-        return ws;
-    }
-
-    actionMoveWorkspace(workspace) {
-        if (!Main.sessionMode.hasWorkspaces)
-            return;
-
-        let activeWorkspace = this.wm.get_active_workspace();
-
-        if (activeWorkspace != workspace)
-            workspace.activate(global.get_current_time());
-    }
-    
-     _onDestroy() {
-        if (this._showingSignal) {
-            Main.overview.disconnect(this._showingSignal);
-            this._showingSignal = null;
-        }
-
-        if (this._hidingSignal) {
-            Main.overview.disconnect(this._hidingSignal);
-            this._hidingSignal = null;
-        }
-
-        if (this._xdndTimeOut) {
-            GLib.Source.remove(this._xdndTimeOut);
-            this._xdndTimeOut = null;
-        }
-        
-        if (this._scrollEventId != null) {
-            this.disconnect(this._scrollEventId);
-            this._scrollEventId = null;
-        }
-        
-        if (this._settingsID) {
-        settings.disconnect(this._settingID);
-        this._settingsID = null;
-        }        
-        
-        super.destroy();
-    }
-});
+const KEY_WORKSPACE_SWITCHER = 'show-workspace-indicators';
 
 const WorkspaceDot = GObject.registerClass({
     Properties: {
@@ -521,14 +229,257 @@ class ActivitiesButton extends PanelMenu.Button {
     }    
 });
 
+const ActivitiesIndicator = GObject.registerClass(
+class ActivitiesIndicator extends PanelMenu.Button {    
+    _init(settings) {
+        super._init(0.5, 'Logo Activities', true);
+        this._settings = settings;
+
+        this.set({
+            name: 'panelActivities',
+            accessible_role: Atk.Role.TOGGLE_BUTTON,
+            /* Translators: If there is no suitable word for "Activities"
+               in your language, you can use the word for "Overview". */
+            accessible_name: _('LogoActivities'),
+        });
+
+        this.text_label = settings.get_boolean(KEY_LABEL);        
+        this.activities_icon = settings.get_boolean(KEY_ICON);
+        this.text = settings.get_string(KEY_TEXT);
+        this.activities_icon_name = settings.get_string(KEY_ICONNAME);
+        this.desktopscroll = settings.get_boolean(KEY_SCROLL);
+        this.popup = settings.get_boolean(KEY_POPUP);
+        this.show_workspace_indicators = settings.get_boolean(KEY_WORKSPACE_SWITCHER);
+        
+        this._settingsID = settings.connect("changed", () => {
+            this.text_label = settings.get_boolean(KEY_LABEL);
+            this.activities_icon = settings.get_boolean(KEY_ICON);
+            this.text = settings.get_string(KEY_TEXT);
+            this.activities_icon_name = settings.get_string(KEY_ICONNAME);
+            this.desktopscroll = settings.get_boolean(KEY_SCROLL);
+            this.popup = settings.get_boolean(KEY_POPUP);
+            this.show_workspace_indicators = settings.get_boolean(KEY_WORKSPACE_SWITCHER);
+            this._set_label();
+            this._set_icon();
+            this._updateWorkspaceIndicators();            
+        });
+        
+        let bin = new St.Bin();
+        this.add_child(bin);
+        
+        this._container = new St.BoxLayout({style_class: 'activities-layout'});
+        bin.set_child(this._container);
+        
+        this._iconBox = new St.Bin({
+        y_align: Clutter.ActorAlign.CENTER,
+        });         
+        this._container.add_child(this._iconBox);        
+          
+        this._label = new St.Label({
+            text: _('Activities'),
+            y_align: Clutter.ActorAlign.CENTER,
+        });        
+        this._container.add_child(this._label);
+        
+        this._workspaceBox = new St.Bin({
+        y_align: Clutter.ActorAlign.CENTER,
+        });         
+        this._container.add_child(this._workspaceBox);
+        
+        this._set_icon();              
+        this._set_label();
+        this._updateWorkspaceIndicators();
+        
+        this.label_actor = this._label;
+        
+        this._showingSignal = Main.overview.connect('showing', () => {
+            this.add_style_pseudo_class('checked');
+            this.add_accessible_state(Atk.StateType.CHECKED);
+        });        
+        
+        this._hidingSignal = Main.overview.connect('hiding', () => {
+            this.remove_style_pseudo_class('checked');
+            this.remove_accessible_state(Atk.StateType.CHECKED);
+        });
+                
+        this._xdndTimeOut = 0;
+        
+        this._lastScrollTime = 0;
+
+        this._scrollEventId = this.connect('scroll-event', (_, event) => {
+        if (this.desktopscroll) {
+            const now = Date.now();
+            if (now - this._lastScrollTime < 200)
+                return Clutter.EVENT_STOP;
+            this._lastScrollTime = now;
+
+            const wsManager = global.workspace_manager;
+            let index = wsManager.get_active_workspace().index();
+
+            let direction = event.get_scroll_direction();
+                if (direction === Clutter.ScrollDirection.DOWN) {
+                    index++;
+                } else if (direction === Clutter.ScrollDirection.UP) {
+                    index--;
+                } else if (direction === Clutter.ScrollDirection.LEFT) {
+                    index++;
+                } else if (direction === Clutter.ScrollDirection.RIGHT) {
+                    index--;
+            } else {
+                let [dx, dy] = event.get_scroll_delta();
+                if (dy > 0)
+                    index++;
+                else if (dy < 0)
+                    index--;
+                else if (dx < 0)
+                    index++;
+                else if (dx > 0)
+                    index--;
+                else
+                    return Clutter.EVENT_PROPAGATE;
+            }
+
+            let nindex = Math.clamp(index, 0, wsManager.n_workspaces - 1);
+            wsManager.get_workspace_by_index(nindex).activate(global.get_current_time());
+
+            if (this.popup) {
+                this._workspaceSwitcherPopup = new WorkspaceSwitcherPopup.WorkspaceSwitcherPopup();
+                    if (!Main.overview.visible)
+                        this._workspaceSwitcherPopup.display(nindex);
+            }
+
+            return Clutter.EVENT_STOP;
+            }
+        });
+    }
+   
+     _set_icon() {
+     
+     if (this.activities_icon) {
+        const icon = new St.Icon({
+            icon_name: 'start-here',
+            style_class: 'activities-icon',
+        });
+        this._iconBox.set_child(icon);
+        
+        icon.icon_name = this.activities_icon_name;
+        
+        if(this.activities_icon_name === '')
+        this._iconBox.visible = false;
+
+        this._iconBox.visible = true;
+        }
+        else {
+        this._iconBox.visible = false;
+        }        
+    }
+    
+    _set_label() {    
+        if(this.text_label) {
+        this._label.set_text(this.text);
+        
+        if(this.text === '')
+        this._label.visible = false;
+        
+        this._label.visible = true;
+        }
+        else {
+        this._label.visible = false;
+        }        
+    }
+    
+    _updateWorkspaceIndicators() {
+        if (this.show_workspace_indicators) {  
+            const workspaceIndicators = new WorkspaceIndicators();
+            this._workspaceBox.set_child(workspaceIndicators);
+                this._workspaceBox.show();
+            }
+        else {
+                this._workspaceBox.hide();
+            }
+    }
+
+    handleDragOver(source, _actor, _x, _y, _time) {
+        if (source != Main.xdndHandler)
+            return DND.DragMotionResult.CONTINUE;
+
+        if (this._xdndTimeOut != 0)
+            GLib.source_remove(this._xdndTimeOut);
+        this._xdndTimeOut = GLib.timeout_add(GLib.PRIORITY_DEFAULT, BUTTON_DND_ACTIVATION_TIMEOUT, () => {
+            this._xdndToggleOverview();
+        });
+        GLib.Source.set_name_by_id(this._xdndTimeOut, '[gnome-shell] this._xdndToggleOverview');
+
+        return DND.DragMotionResult.CONTINUE;
+    }
+
+    vfunc_event(event) {    
+        if (event.type() == Clutter.EventType.TOUCH_END ||
+            event.type() == Clutter.EventType.BUTTON_RELEASE) {
+            if (Main.overview.shouldToggleByCornerOrButton())
+                Main.overview.toggle();
+        }
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    vfunc_key_release_event(keyEvent) {
+        let symbol = keyEvent.keyval;
+        if (symbol == Clutter.KEY_Return || symbol == Clutter.KEY_space) {
+            if (Main.overview.shouldToggleByCornerOrButton()) {
+                Main.overview.toggle();
+                return Clutter.EVENT_PROPAGATE;
+            }
+        }
+        return Clutter.EVENT_PROPAGATE;
+    }
+
+    _xdndToggleOverview() {
+        let [x, y] = global.get_pointer();
+        let pickedActor = global.stage.get_actor_at_pos(Clutter.PickMode.REACTIVE, x, y);
+
+        if (pickedActor == this && Main.overview.shouldToggleByCornerOrButton())
+            Main.overview.toggle();
+
+        GLib.source_remove(this._xdndTimeOut);
+        this._xdndTimeOut = 0;
+        return GLib.SOURCE_REMOVE;
+    }
+    
+     destroy() {
+        if (this._showingSignal) {
+            Main.overview.disconnect(this._showingSignal);
+            this._showingSignal = null;
+        }
+
+        if (this._hidingSignal) {
+            Main.overview.disconnect(this._hidingSignal);
+            this._hidingSignal = null;
+        }
+
+        if (this._xdndTimeOut) {
+            GLib.Source.remove(this._xdndTimeOut);
+            this._xdndTimeOut = null;
+        }
+        
+        if (this._scrollEventId != null) {
+            this.disconnect(this._scrollEventId);
+            this._scrollEventId = null;
+        }
+        
+        if (this._settingsID) {
+        this._settings.disconnect(this._settingID);
+        this._settingsID = null;
+        }        
+        
+        super.destroy();
+    }
+});
+
 export default class ActivitiesExtension extends Extension {
 
     panel_indicator() {
            this._indicator2 = new ActivitiesButton();
-           Main.panel.addToStatusArea('Workspaceactivities', this._indicator2, 0, 'right');
-           //Main.overview.connect('hidden', () => {this._indicator2.visible = true});
-           //Main.overview.connect('showing', () => {this._indicator2.visible = false});
-           
+           Main.panel.addToStatusArea('Workspaceactivities', this._indicator2, 0, 'right');           
         }
 
     enable() {
@@ -547,12 +498,12 @@ export default class ActivitiesExtension extends Extension {
            });
 }
 
-    disable() {
-        this._settings = null;
+    disable() {        
         this._indicator?.destroy();
         this._indicator = null;
         this._indicator2?.destroy();
         this._indicator2 = null;
+        this._settings = null;
       
         if (Main.sessionMode.currentMode !== 'unlock-dialog')
             Main.panel.statusArea['activities'].show();
