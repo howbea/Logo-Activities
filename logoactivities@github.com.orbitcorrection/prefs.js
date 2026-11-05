@@ -48,7 +48,6 @@ export default class ActivitiesInLPrefs extends ExtensionPreferences {
         // Icon Name
         group.add(this._createEntryRow(
             _('Icon Name'),
-            _('Enter icon name'),
             settings,
             KEY_ICONNAME
         ));
@@ -64,7 +63,6 @@ export default class ActivitiesInLPrefs extends ExtensionPreferences {
         // Label Text
         group.add(this._createEntryRow(
             _('Label Text'),
-            _('Enter label text'),
             settings,
             KEY_TEXT
         ));
@@ -106,10 +104,9 @@ export default class ActivitiesInLPrefs extends ExtensionPreferences {
         return row;
     }
 
-    _createEntryRow(title, subtitle, settings, key) {
+    _createEntryRow(title, settings, key) {
         const row = new Adw.EntryRow({
             title: title,
-            subtitle: subtitle,
             text: settings.get_string(key),
         });
         row.connect('notify::text', (row) => {
