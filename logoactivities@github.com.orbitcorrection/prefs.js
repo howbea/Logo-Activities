@@ -1,4 +1,4 @@
-import Gio from 'gi://Gio';
+import Adw from 'gi://Adw';
 import Gtk from 'gi://Gtk';
 
 import {ExtensionPreferences, gettext as _} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
@@ -11,69 +11,107 @@ const KEY_ICON = 'icon';
 const KEY_ICONNAME = 'icon-name';
 const KEY_SCROLL = 'scroll';
 const KEY_PANEL = 'panel-indicator';
+const KEY_WORKSPACE_SWITCHER = 'show-workspace-indicators';
 
-function buildPrefsWidget(settings) {
-    let widget = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        margin_top: 10,
-        margin_bottom: 10,
-        margin_start: 10,
-        margin_end: 10,
-    });
-
-    let vbox = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        margin_top: 10
-    });
-    vbox.set_size_request(550, 350);
-
-    // Add switch for workspace indicators
-    vbox.append(addItemSwitch("Show Workspace Indicators", "show-workspace-indicators", settings));
-
-    // Add other settings...
-    vbox.append(addItemSwitch("Icon", KEY_ICON, settings));
-    vbox.append(addText(KEY_ICONNAME, 'Enter icon name', settings));
-    vbox.append(addItemSwitch("Label", KEY_LABEL, settings));
-    vbox.append(addText(KEY_TEXT, 'Enter label text', settings));
-    vbox.append(addItemSwitch("Desktop Scroll", KEY_SCROLL, settings));
-    vbox.append(addItemSwitch("Popup Indicator", KEY_POPUP, settings));
-    vbox.append(addItemSwitch("Panel Indicator", KEY_PANEL, settings));
-
-    widget.append(vbox);
-
-    return widget;
-}
-
-
-function addItemSwitch(string, key, gsettings) {
-        let hbox = new Gtk.Box({ orientation: Gtk.Orientation.HORIZONTAL, margin_top: 20});
-        let info = new Gtk.Label({xalign: 0, hexpand: true});
-        info.set_markup(string);
-        hbox.append(info);
-
-        let button = new Gtk.Switch({ active: gsettings.get_boolean(key) });
-        button.connect('notify::active', (button) => { gsettings.set_boolean(key, button.active); });
-        hbox.append(button);
-        return hbox;
-    }
-    
-function addText(key, placeholder_text, gsettings) {
-        let hbox = new Gtk.Box({orientation: Gtk.Orientation.HORIZONTAL, margin_top: 5});        
-        let info = new Gtk.Label({xalign: 0, hexpand: true});        
-        hbox.append(info);
-        
-        let settingentry = new Gtk.Entry({hexpand: true, margin_start: 20});
-        settingentry.set_placeholder_text(placeholder_text);
-        settingentry.set_text(gsettings.get_string(key));
-        settingentry.connect('changed', (entry) => {
-            gsettings.set_string(key, entry.get_text());
-        });        
-        hbox.append(settingentry);
-        return hbox;
-        
-    }
 export default class ActivitiesInLPrefs extends ExtensionPreferences {
-    getPreferencesWidget() {
-        return buildPrefsWidget(this.getSettings());
+    fillPreferencesWindow(window) {
+        const settings = this.getSettings();
+        
+        const page = new Adw.PreferencesPage({
+            title: _('General'),
+            icon_name: 'dialog-information-symbolic',
+        });
+        window.add(page);
+
+        const group = new Adw.PreferencesGroup({
+            title: _('Appearance'),
+            description: _('Configure the appearance of the extension'),
+        });
+        page.add(group);
+
+        // Show Workspace Indicators
+        group.add(this._createSwitchRow(
+            _('Show Workspace Indicators'),
+            _('Enable or disable workspace indicators'),
+            settings,
+            KEY_WORKSPACE_SWITCHER
+        ));
+
+        // Icon
+        group.add(this._createSwitchRow(
+            _('Icon'),
+            _('Show icon'),
+            settings,
+            KEY_ICON
+        ));
+
+        // Icon Name
+        group.add(this._createEntryRow(
+            _('Icon Name'),
+            settings,
+            KEY_ICONNAME
+        ));
+
+        // Label
+        group.add(this._createSwitchRow(
+            _('Label'),
+            _('Show label'),
+            settings,
+            KEY_LABEL
+        ));
+
+        // Label Text
+        group.add(this._createEntryRow(
+            _('Label Text'),
+            settings,
+            KEY_TEXT
+        ));
+
+        // Desktop Scroll
+        group.add(this._createSwitchRow(
+            _('Desktop Scroll'),
+            _('Enable desktop scroll to switch workspaces'),
+            settings,
+            KEY_SCROLL
+        ));
+
+        // Popup Indicator
+        group.add(this._createSwitchRow(
+            _('Popup Indicator'),
+            _('Show workspace switcher popup on scroll'),
+            settings,
+            KEY_POPUP
+        ));
+
+        // Panel Indicator
+        group.add(this._createSwitchRow(
+            _('Panel Indicator'),
+            _('Show panel indicator on right side'),
+            settings,
+            KEY_PANEL
+        ));
+    }
+
+    _createSwitchRow(title, subtitle, settings, key) {
+        const row = new Adw.SwitchRow({
+            title: title,
+            subtitle: subtitle,
+            active: settings.get_boolean(key),
+        });
+        row.connect('notify::active', (row) => {
+            settings.set_boolean(key, row.active);
+        });
+        return row;
+    }
+
+    _createEntryRow(title, settings, key) {
+        const row = new Adw.EntryRow({
+            title: title,
+            text: settings.get_string(key),
+        });
+        row.connect('notify::text', (row) => {
+            settings.set_string(key, row.text);
+        });
+        return row;
     }
 }

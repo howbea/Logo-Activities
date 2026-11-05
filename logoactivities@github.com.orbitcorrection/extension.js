@@ -33,10 +33,12 @@ import * as Panel from 'resource:///org/gnome/shell/ui/panel.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as WorkspaceSwitcherPopup from 'resource:///org/gnome/shell/ui/workspaceSwitcherPopup.js';
+import * as DND from 'resource:///org/gnome/shell/ui/dnd.js';
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
 const N_QUICK_SETTINGS_COLUMNS = 2;
 const INACTIVE_WORKSPACE_DOT_SCALE = 0.75;
+const BUTTON_DND_ACTIVATION_TIMEOUT = 250;
 
 const SCHEMA_NAME = 'org.gnome.shell.extensions.logoactivities';
 const KEY_LABEL = 'label';
@@ -467,7 +469,7 @@ class ActivitiesIndicator extends PanelMenu.Button {
         }
         
         if (this._settingsID) {
-        this._settings.disconnect(this._settingID);
+        this._settings.disconnect(this._settingsID);
         this._settingsID = null;
         }        
         
