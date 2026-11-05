@@ -13,7 +13,7 @@ A GNOME Shell extension that adds a customizable icon and label to the Activitie
 
 ## Installation
 
-### From Source
+### From Source (Local Development)
 
 ```bash
 # Clone the repository
@@ -27,11 +27,20 @@ glib-compile-schemas schemas/
 # Install to local extensions directory
 cp -r logoactivities@github.com.orbitcorrection ~/.local/share/gnome-shell/extensions/
 
-# Restart GNOME Shell
+# Enable the extension
+gnome-extensions enable logoactivities@github.com.orbitcorrection
+
+# Restart GNOME Shell to apply changes
 # X11: Alt+F2, type 'r', press Enter
 # Wayland: Log out and log back in
+```
 
-# Enable the extension
+### Quick Deploy (for local development)
+
+```bash
+# One-liner to deploy latest changes
+cp -r logoactivities@github.com.orbitcorrection ~/.local/share/gnome-shell/extensions/ && \
+glib-compile-schemas ~/.local/share/gnome-shell/extensions/logoactivities@github.com.orbitcorrection/schemas/ && \
 gnome-extensions enable logoactivities@github.com.orbitcorrection
 ```
 
@@ -39,6 +48,25 @@ gnome-extensions enable logoactivities@github.com.orbitcorrection
 
 1. Install [Extension Manager](https://flathub.org/apps/com.mattjakeman.ExtensionManager) from Flathub
 2. Search for "Logo Activities" and install
+
+## Managing the Extension
+
+```bash
+# Check if extension is enabled
+gnome-extensions list --enabled | grep logoactivities
+
+# View extension info
+gnome-extensions info logoactivities@github.com.orbitcorrection
+
+# Open preferences
+gnome-extensions prefs logoactivities@github.com.orbitcorrection
+
+# Disable extension
+gnome-extensions disable logoactivities@github.com.orbitcorrection
+
+# Uninstall (remove from local directory)
+rm -rf ~/.local/share/gnome-shell/extensions/logoactivities@github.com.orbitcorrection
+```
 
 ## Configuration
 
